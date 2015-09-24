@@ -65,6 +65,10 @@ void MkStudioConnect::run()
           break;
         }
         if (c == (char)MKSTUDIO_CONNECT_LAST_BYTE) {
+          if (m_stream->available() > 0) {
+            m_state = STATE_INIT;
+            break;
+          }
           m_state = STATE_PROCESS;
           break;
         }
@@ -123,14 +127,21 @@ void MkStudioConnect::processTransaction()
     return;
   }
 
-  const uint16_t addr = m_buffer[1] | (m_buffer[2] << 8);
+  const uint8_t command = m_buffer[0];
+  const uint16_t addr = (static_cast<uint16_t>(m_buffer[2]) << 8) | m_buffer[1];
   const uint8_t len = m_buffer[3];
+
   if ((addr + len) > m_baseSize) {
     m_index = 0;
     return;
   }
+
+  if (len  > (sizeof(m_buffer) - 4)) {
+    m_index = 0;
+    return;
+  }
   
-  if (m_buffer[0] == MKSTUDIO_CONNECT_COMMAND_READ) {
+  if (command == MKSTUDIO_CONNECT_COMMAND_READ) {
     for (uint8_t i = 0; i < len; ++i) {
       m_buffer[4 + i] = m_base[addr + i];
     }
@@ -138,21 +149,21 @@ void MkStudioConnect::processTransaction()
     return;
   }
 
-  if (m_buffer[0] == MKSTUDIO_CONNECT_COMMAND_WRITE) {
+  if (command == MKSTUDIO_CONNECT_COMMAND_WRITE) {
     for (uint8_t i = 0; i < len; ++i) {
       m_base[addr + i] = m_buffer[4 + i];
     }
     return;
   }
 
-  if (m_buffer[0] == MKSTUDIO_CONNECT_COMMAND_WRITE_OR) {
+  if (command == MKSTUDIO_CONNECT_COMMAND_WRITE_OR) {
     for (uint8_t i = 0; i < len; ++i) {
       m_base[addr + i] |= m_buffer[4 + i];
     }
     return;
   }
 
-  if (m_buffer[0] == MKSTUDIO_CONNECT_COMMAND_WRITE_AND) {
+  if (command == MKSTUDIO_CONNECT_COMMAND_WRITE_AND) {
     for (uint8_t i = 0; i < len; ++i) {
       m_base[addr + i] &= m_buffer[4 + i];
     }

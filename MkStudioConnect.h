@@ -9,6 +9,7 @@
 
 #include "Arduino.h"
 
+#define MKSTUDIOCONNECT_BUFFER_SIZE 32
 
 class MkStudioConnect
 {
@@ -25,8 +26,7 @@ private:
   Stream *m_stream;
   uint8_t *m_base;
   uint16_t m_baseSize;
-
-  uint8_t m_buffer[32];
+  uint8_t m_buffer[MKSTUDIOCONNECT_BUFFER_SIZE];
   uint8_t m_state;
   uint8_t m_index;
   uint8_t m_extra;
